@@ -8,10 +8,11 @@ const (
 )
 
 type HttpRoute struct {
-	Path        string
-	ServantName string
-	FuncName    string
-	Type        ServantType
-	Auth        *ServantAuth
-	Children    []*HttpRoute
+	Path               string
+	ServantName        string
+	FuncName           string
+	Type               ServantType
+	Auth               *ServantAuth
+	TransparentHeaders []string
+	Children           []*HttpRoute
 }

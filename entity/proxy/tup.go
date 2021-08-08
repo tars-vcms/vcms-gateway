@@ -27,7 +27,7 @@ func (t *TupProxy) SetCallback(cb *GatewayProxyCallback) {
 }
 
 func (t TupProxy) DoRequest(routeHttp *route.HttpRoute, w http.ResponseWriter, r *http.Request) (int, error) {
-	reqContext, err := t.createContext(r)
+	reqContext, err := t.createContext(r, routeHttp.TransparentHeaders)
 	if err != nil {
 		return 500, err
 	}
@@ -54,11 +54,17 @@ func (t TupProxy) DoRequest(routeHttp *route.HttpRoute, w http.ResponseWriter, r
 	return 200, nil
 }
 
-func (t TupProxy) createContext(r *http.Request) (map[string]string, error) {
+func (t TupProxy) createContext(r *http.Request, tHeaders []string) (map[string]string, error) {
 	c := make(map[string]string)
 	if err := r.ParseForm(); err != nil {
 		return nil, err
 	}
+	// 注入http query参数
 	c["query"] = r.Form.Encode()
+	header := r.Header
+	// 注入需要透传的header
+	for _, h := range tHeaders {
+		c[h] = header.Get(h)
+	}
 	return c, nil
 }

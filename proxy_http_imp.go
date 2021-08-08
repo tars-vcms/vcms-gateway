@@ -12,6 +12,19 @@ import (
 	"strconv"
 )
 
+func newProxyHttpImp() *ProxyHttpImp {
+	mux := &tars.TarsHttpMux{}
+	proxyHttp := &ProxyHttpImp{
+		mux:    mux,
+		route:  routemanager.NewHttpRouteManager(),
+		auth:   auth.NewHttpAuth(),
+		proxy:  proxymanager.NewGatewayProxyManager(),
+		header: header.NewHttpHeader(),
+	}
+	mux.HandleFunc("/", proxyHttp.handleRequest)
+	return proxyHttp
+}
+
 type ProxyHttpImp struct {
 	mux    *tars.TarsHttpMux
 	route  routemanager.HttpRouteManager
@@ -65,22 +78,9 @@ func (p ProxyHttpImp) handleRequest(w http.ResponseWriter, r *http.Request) {
 			return nil
 		},
 	})
-	httpCode, err := gProxy.DoRequest(routeHttp, w, r)
-	if err != nil {
+
+	if httpCode, err := gProxy.DoRequest(routeHttp, w, r); err != nil {
 		p.handleError(w, httpCode, err)
 		return
 	}
-}
-
-func newProxyHttpImp() *ProxyHttpImp {
-	mux := &tars.TarsHttpMux{}
-	proxyHttp := &ProxyHttpImp{
-		mux:    mux,
-		route:  routemanager.NewHttpRouteManager(),
-		auth:   auth.NewHttpAuth(),
-		proxy:  proxymanager.NewGatewayProxyManager(),
-		header: header.NewHttpHeader(),
-	}
-	mux.HandleFunc("/", proxyHttp.handleRequest)
-	return proxyHttp
 }
