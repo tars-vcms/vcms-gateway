@@ -1,7 +1,8 @@
 package header
 
 import (
-	"github.com/tars-vcms/vcms-gateway/repo/rcfg"
+	"github.com/tars-vcms/vcms-gateway/entity/config"
+	"github.com/tars-vcms/vcms-gateway/repo/rcfgs"
 	"net/http"
 )
 
@@ -24,22 +25,17 @@ func (h HttpHeaderImpl) HandleErrorInfo(w http.ResponseWriter, err error) {
 }
 
 func newHttpHeaderImpl() *HttpHeaderImpl {
-	var content string
-	if err := rcfg.GetInstance().GetConfig("gateway.conf", rcfg.TEXT, &content); err != nil {
+	gatewayCfg := &config.GatewayConfig{
+		HeaderMap: make(map[string]string),
+	}
+	if err := rcfgs.GetInstance().GetConfig(config.GATEWAY_FILE_NAME, rcfgs.STRUCT, gatewayCfg); err != nil {
 		panic(err.Error())
 	}
-	c, err := rcfg.GetInstance().ParseConfig(content)
-	if err != nil {
-		panic(err.Error())
-	}
-	headers := map[string]string{}
+	headerMap := gatewayCfg.HeaderMap
 	for k, v := range DefaultHeaders {
-		headers[k] = v
-	}
-	for k, v := range c.GetMap("/gateway/headers") {
-		headers[k] = v
+		headerMap[k] = v
 	}
 	return &HttpHeaderImpl{
-		headers: headers,
+		headers: headerMap,
 	}
 }

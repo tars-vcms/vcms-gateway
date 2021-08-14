@@ -5,7 +5,7 @@ import (
 )
 
 func main() {
-	// Get server routemanager
+	// Get server routes
 	cfg := tars.GetServerConfig()
 	proxyHttp := NewProxyHttp()
 	tars.AddHttpServant(proxyHttp.GetTarsHttpMux(), cfg.App+"."+cfg.Server+".ProxyHTTPObj")

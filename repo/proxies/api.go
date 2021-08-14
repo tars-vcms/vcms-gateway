@@ -1,4 +1,4 @@
-package proxymanager
+package proxies
 
 import (
 	"github.com/tars-vcms/vcms-gateway/entity/proxy"

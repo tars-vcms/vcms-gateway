@@ -10,9 +10,9 @@ const (
 )
 
 type ServantAuth struct {
-	Type AuthType
+	Type AuthType `json:"type"`
 	// RoleName Token验证模式时所比较的用户组名
-	RoleName []string
+	RoleName []string `json:"role_name"`
 	// RbacCode 调用Rbac服务需要携带的Code
-	RbacCode string
+	RbacCode string `json:"rbac_code"`
 }

@@ -1,4 +1,4 @@
-package proxymanager
+package proxies
 
 import (
 	"github.com/TarsCloud/TarsGo/tars"
@@ -37,10 +37,10 @@ func (t GatewayProxyManagerImpl) GetProxy(httpRoute *route.HttpRoute, r *http.Re
 	var p proxy.GatewayProxy
 	var err error
 	switch httpRoute.Type {
-	case route.TarsServant:
+	case route.TARS_SERVANT:
 		p, err = t.getTupProxy(httpRoute, r)
 		break
-	case route.ReverseProxyServant:
+	case route.RESERVE_PROXY_SERVANT:
 		p, err = t.getReserveProxy(httpRoute, r)
 		break
 	}

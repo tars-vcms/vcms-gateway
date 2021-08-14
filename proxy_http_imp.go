@@ -6,8 +6,8 @@ import (
 	"github.com/tars-vcms/vcms-gateway/entity/proxy"
 	"github.com/tars-vcms/vcms-gateway/repo/auth"
 	"github.com/tars-vcms/vcms-gateway/repo/header"
-	"github.com/tars-vcms/vcms-gateway/repo/proxymanager"
-	"github.com/tars-vcms/vcms-gateway/repo/routemanager"
+	"github.com/tars-vcms/vcms-gateway/repo/proxies"
+	"github.com/tars-vcms/vcms-gateway/repo/routes"
 	"net/http"
 	"strconv"
 )
@@ -16,9 +16,9 @@ func newProxyHttpImp() *ProxyHttpImp {
 	mux := &tars.TarsHttpMux{}
 	proxyHttp := &ProxyHttpImp{
 		mux:    mux,
-		route:  routemanager.NewHttpRouteManager(),
+		route:  routes.GetInstance(),
 		auth:   auth.NewHttpAuth(),
-		proxy:  proxymanager.NewGatewayProxyManager(),
+		proxy:  proxies.NewGatewayProxyManager(),
 		header: header.NewHttpHeader(),
 	}
 	mux.HandleFunc("/", proxyHttp.handleRequest)
@@ -27,9 +27,9 @@ func newProxyHttpImp() *ProxyHttpImp {
 
 type ProxyHttpImp struct {
 	mux    *tars.TarsHttpMux
-	route  routemanager.HttpRouteManager
+	route  routes.HttpRouteManager
 	auth   auth.HttpAuth
-	proxy  proxymanager.GatewayProxyManager
+	proxy  proxies.GatewayProxyManager
 	header header.HttpHeader
 }
 

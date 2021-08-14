@@ -2,9 +2,11 @@ package proxy
 
 import (
 	"context"
+	"encoding/json"
 	"github.com/TarsCloud/TarsGo/tars"
 	"github.com/TarsCloud/TarsGo/tars/protocol/codec"
 	"github.com/TarsCloud/TarsGo/tars/protocol/res/requestf"
+	"github.com/tars-vcms/vcms-common/errs"
 	"github.com/tars-vcms/vcms-gateway/entity/route"
 	"io/ioutil"
 	"net/http"
@@ -26,7 +28,7 @@ func (t *TupProxy) SetCallback(cb *GatewayProxyCallback) {
 	t.callback = cb
 }
 
-func (t TupProxy) DoRequest(routeHttp *route.HttpRoute, w http.ResponseWriter, r *http.Request) (int, error) {
+func (t *TupProxy) DoRequest(routeHttp *route.HttpRoute, w http.ResponseWriter, r *http.Request) (int, error) {
 	reqContext, err := t.createContext(r, routeHttp.TransparentHeaders)
 	if err != nil {
 		return 500, err
@@ -37,10 +39,15 @@ func (t TupProxy) DoRequest(routeHttp *route.HttpRoute, w http.ResponseWriter, r
 		return 400, err
 	}
 
+	input, err := t.marshalInput(routeHttp.InputName, body)
+	if err != nil {
+		return 400, err
+	}
+
 	var status map[string]string
 	resp := &requestf.ResponsePacket{}
 	ctx := context.Background()
-	if err := t.Proxy.Tars_invoke(ctx, 0, routeHttp.FuncName, body, status, reqContext, resp); err != nil {
+	if err := t.Proxy.Tars_invoke(ctx, 0, routeHttp.FuncName, input, status, reqContext, resp); err != nil {
 		return 502, err
 	}
 	if t.callback != nil && t.callback.HandleResponseHeader != nil {
@@ -48,13 +55,21 @@ func (t TupProxy) DoRequest(routeHttp *route.HttpRoute, w http.ResponseWriter, r
 			return 502, err
 		}
 	}
-	if _, err = w.Write(codec.FromInt8(resp.SBuffer)); err != nil {
+	if err = errs.CatchError(resp.Context); err != nil {
+		return 200, err
+	}
+	tarsResp := codec.FromInt8(resp.SBuffer)
+	body, err = t.unmarshalOutput(routeHttp.OutputName, tarsResp)
+	if err != nil {
+		return 502, err
+	}
+	if _, err = w.Write(body); err != nil {
 		return 502, err
 	}
 	return 200, nil
 }
 
-func (t TupProxy) createContext(r *http.Request, tHeaders []string) (map[string]string, error) {
+func (t *TupProxy) createContext(r *http.Request, tHeaders []string) (map[string]string, error) {
 	c := make(map[string]string)
 	if err := r.ParseForm(); err != nil {
 		return nil, err
@@ -67,4 +82,29 @@ func (t TupProxy) createContext(r *http.Request, tHeaders []string) (map[string]
 		c[h] = header.Get(h)
 	}
 	return c, nil
+}
+
+func (t *TupProxy) marshalInput(inputName string, httpBody []byte) ([]byte, error) {
+	var body interface{}
+	if err := json.Unmarshal(httpBody, &body); err != nil {
+		return nil, err
+	}
+
+	input := make(map[string]interface{})
+	input[inputName] = body
+
+	return json.Marshal(input)
+}
+
+func (t *TupProxy) unmarshalOutput(outputName string, tarsResp []byte) ([]byte, error) {
+	var resp map[string]interface{}
+
+	if err := json.Unmarshal(tarsResp, &resp); err != nil {
+		return tarsResp, err
+	}
+	output, ok := resp[outputName]
+	if !ok {
+		return tarsResp, nil
+	}
+	return json.Marshal(output)
 }
