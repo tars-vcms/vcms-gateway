@@ -3,7 +3,6 @@ package routes
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"github.com/go-redis/redis/v8"
 	"github.com/tars-vcms/vcms-gateway/entity/cache"
 	"github.com/tars-vcms/vcms-gateway/entity/route"
@@ -52,10 +51,10 @@ func (h *HttpRouteManagerImpl) routeListen(wg *sync.WaitGroup) {
 			}
 			break
 		default:
-			h.logger.Info("[Routes] Undefined MQRouteCmd %s", mQRouteCmd.CMD)
+			h.logger.Info("[Routes] Undefined MQRouteCmd %v", mQRouteCmd.CMD)
 
 		}
-		fmt.Printf("channel=%s message=%s\n", msg.Channel, msg.Payload)
+		//fmt.Printf("channel=%s message=%s\n", msg.Channel, msg.Payload)
 	}
 }
 
@@ -67,8 +66,8 @@ func (h *HttpRouteManagerImpl) loadRoute(version string) error {
 	}
 	h.routesRwMutex.Lock()
 	defer h.routesRwMutex.Unlock()
-	var r []*route.HttpRoute
-	err := json.Unmarshal([]byte(stringCmd.Val()), r)
+	r := make([]*route.HttpRoute, 0)
+	err := json.Unmarshal([]byte(stringCmd.Val()), &r)
 	if err != nil {
 		return err
 	}

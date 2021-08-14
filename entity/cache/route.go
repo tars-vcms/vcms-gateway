@@ -15,7 +15,7 @@ const (
 )
 
 type MQRouteCmd struct {
-	CMD MQRouteCmdType `json:"cache"`
+	CMD MQRouteCmdType `json:"cmd"`
 
 	Payload string `json:"payload"`
 
