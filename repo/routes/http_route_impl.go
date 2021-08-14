@@ -1,11 +1,9 @@
 package routes
 
 import (
-	"context"
 	"github.com/TarsCloud/TarsGo/tars"
 	"github.com/TarsCloud/TarsGo/tars/util/rogger"
 	"github.com/go-redis/redis/v8"
-	"github.com/tars-vcms/vcms-gateway/entity/cache"
 	"github.com/tars-vcms/vcms-gateway/entity/config"
 	"github.com/tars-vcms/vcms-gateway/entity/route"
 	"github.com/tars-vcms/vcms-gateway/repo/rcfgs"
@@ -21,13 +19,21 @@ type HttpRouteManagerImpl struct {
 	redis         *redis.Client
 	logger        *rogger.Logger
 	rcfg          rcfgs.RemoteCfg
+	routesUpdater HttpRouteUpdater
 }
 
 func newHttpRouteManagerImpl() *HttpRouteManagerImpl {
+	rcfg := rcfgs.GetInstance()
+	gateway := &config.GatewayConfig{
+		HeaderMap: make(map[string]string),
+	}
+	if err := rcfg.GetConfig(config.GATEWAY_FILE_NAME, rcfgs.STRUCT, gateway); err != nil {
+		panic(err)
+	}
 	manager := &HttpRouteManagerImpl{
-		redis:  rcfgs.GetInstance().GetRedisClient(),
-		logger: tars.GetLogger("CLOG"),
-		rcfg:   rcfgs.GetInstance(),
+		logger:      tars.GetLogger("CLOG"),
+		rcfg:        rcfgs.GetInstance(),
+		gatewayName: gateway.Name,
 		routes: []*route.HttpRoute{
 			{
 				Path:        "world",
@@ -52,38 +58,12 @@ func newHttpRouteManagerImpl() *HttpRouteManagerImpl {
 			},
 		},
 	}
-	gateway := &config.GatewayConfig{
-		HeaderMap: make(map[string]string),
-	}
-	if err := manager.rcfg.GetConfig(config.GATEWAY_FILE_NAME, rcfgs.STRUCT, gateway); err != nil {
-		manager.logger.Error("[Routes] Get GatewayConfig failed %v", err.Error())
-		panic(err)
-	}
-	manager.gatewayName = gateway.Name
+	manager.routesUpdater = newHttpRouteUpdater(manager.gatewayName, manager)
 	return manager
 }
 
 func (h *HttpRouteManagerImpl) SubscribeRoute() {
-	ctx := context.Background()
-	cmd := h.redis.Get(ctx, h.gatewayName+cache.ROUTE_VERSION_SUFFIX)
-	ok := cmd.Err() == nil
-	if !ok {
-		h.logger.Error("[Routes] Get Route Version failed %v", cmd.Err().Error())
-	} else {
-		// 首先先预加载一次
-		if err := h.loadRoute(cmd.Val()); err != nil {
-			h.logger.Error("[Routes] Load Route failed %v", err.Error())
-			// 从缓存加载失败，尝试向网关重新获取
-			ok = false
-		}
-	}
-	go h.routeListenGuard()
-	if !ok {
-		h.logger.Info("[Routes] Try to Pub Require Route Cmd ")
-		if err := h.pubRequireRoute(); err != nil {
-			h.logger.Error("[Routes] PubRequireRoute failed %v", err.Error())
-		}
-	}
+	h.routesUpdater.Subscribe()
 }
 
 func (h *HttpRouteManagerImpl) ParseRouteHttp(request *http.Request) *route.HttpRoute {
@@ -113,6 +93,11 @@ func (h *HttpRouteManagerImpl) parseRouteTree(paths []string, routes []*route.Ht
 		}
 
 	}
-
 	return nil
+}
+
+func (h *HttpRouteManagerImpl) HandleRoutesUpdate(routes []*route.HttpRoute) {
+	h.routesRwMutex.Lock()
+	defer h.routesRwMutex.Unlock()
+	h.routes = routes
 }

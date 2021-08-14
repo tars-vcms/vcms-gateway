@@ -10,6 +10,14 @@ type HttpRouteManager interface {
 	ParseRouteHttp(request *http.Request) *route.HttpRoute
 
 	SubscribeRoute()
+
+	HandleRoutesUpdate(routes []*route.HttpRoute)
+}
+
+type HttpRouteUpdater interface {
+	Subscribe()
+
+	Listen()
 }
 
 var once sync.Once
@@ -21,4 +29,8 @@ func GetInstance() HttpRouteManager {
 		manager.SubscribeRoute()
 	})
 	return manager
+}
+
+func newHttpRouteUpdater(name string, routeManager HttpRouteManager) HttpRouteUpdater {
+	return newHttpRouteUpdaterImpl(name, routeManager)
 }
