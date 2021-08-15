@@ -3,6 +3,7 @@ package routes
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"github.com/TarsCloud/TarsGo/tars"
 	"github.com/TarsCloud/TarsGo/tars/util/rogger"
 	"github.com/go-redis/redis/v8"
@@ -35,18 +36,18 @@ func (h *HttpRouteUpdaterImpl) Subscribe() {
 	ok := err == nil
 	if ok {
 		if err := h.updateRoutes(version); err != nil {
-			h.logger.Error("[Routes] Load Route failed %v", err.Error())
+			h.logger.Error(fmt.Sprintf("[Routes] Load Route failed %v", err.Error()))
 			// 从缓存加载失败，尝试向网关重新获取
 			ok = false
 		}
-	} else {
-		h.logger.Error("[Routes] Get Route Version failed %v", err.Error())
+	} else if err != nil {
+		h.logger.Error(fmt.Sprintf("[Routes] Get Route Version failed %v", err.Error()))
 	}
 	h.Listen()
 	if !ok {
 		h.logger.Info("[Routes] Try to Pub Require Route Cmd ")
 		if err := h.PubRequireRoute(); err != nil {
-			h.logger.Error("[Routes] PubRequireRoute failed %v", err.Error())
+			h.logger.Error(fmt.Sprintf("[Routes] PubRequireRoute failed %v", err.Error()))
 		}
 	}
 }
@@ -69,30 +70,30 @@ func (h *HttpRouteUpdaterImpl) listenHandler() {
 	defer func(ps *redis.PubSub) {
 		err := ps.Close()
 		if err != nil {
-			h.logger.Error("[Routes] Redis PubSub Close failed %v", err.Error())
+			h.logger.Error(fmt.Sprintf("[Routes] Redis PubSub Close failed %v", err.Error()))
 		}
 		h.wg.Done()
 	}(ps)
 	_, err := ps.Receive(ctx)
 	if err != nil {
-		h.logger.Error("[Routes] Redis PubSub Receive failed %s", err.Error())
+		h.logger.Error(fmt.Sprintf("[Routes] Redis PubSub Receive failed %s", err.Error()))
 		return
 	}
 	for msg := range ps.Channel() {
 		mQRouteCmd := &cache.MQRouteCmd{}
 		err := json.Unmarshal([]byte(msg.Payload), mQRouteCmd)
 		if err != nil {
-			h.logger.Error("[Routes] Unmarshal MQRouteCmd failed %s", err.Error())
+			h.logger.Error(fmt.Sprintf("[Routes] Unmarshal MQRouteCmd failed %s", err.Error()))
 			continue
 		}
 		switch mQRouteCmd.CMD {
 		case cache.CMD_ROUTE_UPDATE:
 			if err := h.updateRoutes(mQRouteCmd.Payload); err != nil {
-				h.logger.Error("[Routes] Load Route failed %v", err.Error())
+				h.logger.Error(fmt.Sprintf("[Routes] Load Route failed %v", err.Error()))
 			}
 			break
 		default:
-			h.logger.Info("[Routes] Undefined MQRouteCmd %v", mQRouteCmd.CMD)
+			h.logger.Info(fmt.Sprintf("[Routes] Undefined MQRouteCmd %v", mQRouteCmd.CMD))
 
 		}
 		//fmt.Printf("channel=%s message=%s\n", msg.Channel, msg.Payload)

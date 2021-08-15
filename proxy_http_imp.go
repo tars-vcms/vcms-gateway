@@ -21,7 +21,7 @@ func newProxyHttpImp() *ProxyHttpImp {
 		proxy:  proxies.NewGatewayProxyManager(),
 		header: header.NewHttpHeader(),
 	}
-	mux.HandleFunc("/", proxyHttp.handleRequest)
+	mux.HandleFunc("/", proxyHttp.requestHandler)
 	return proxyHttp
 }
 
@@ -47,7 +47,7 @@ func (p ProxyHttpImp) GetTarsHttpMux() *tars.TarsHttpMux {
 	return p.mux
 }
 
-func (p ProxyHttpImp) handleRequest(w http.ResponseWriter, r *http.Request) {
+func (p ProxyHttpImp) requestHandler(w http.ResponseWriter, r *http.Request) {
 
 	if httpCode, err := p.header.CheckRequestHeader(r); err != nil {
 		p.handleError(w, httpCode, err)

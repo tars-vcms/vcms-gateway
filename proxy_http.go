@@ -6,7 +6,7 @@ import (
 )
 
 type ProxyHttp interface {
-	handleRequest(w http.ResponseWriter, r *http.Request)
+	requestHandler(w http.ResponseWriter, r *http.Request)
 	handleError(w http.ResponseWriter, code int, err error)
 	GetTarsHttpMux() *tars.TarsHttpMux
 }

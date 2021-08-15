@@ -8,7 +8,7 @@ var DefaultHeaders = map[string]string{
 	"Access-Control-Allow-Methods": "POST, GET",
 	"Cache-Control":                "no-cache",
 	"Tars-Ret":                     "0",
-	"Tars-Msg":                     "Success",
+	"Tars-Msg":                     "success",
 }
 
 type HttpHeader interface {
