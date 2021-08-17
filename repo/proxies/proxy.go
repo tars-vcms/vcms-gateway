@@ -36,7 +36,7 @@ func (t GatewayProxyManagerImpl) getReserveProxy(httpRoute *route.HttpRoute, r *
 func (t GatewayProxyManagerImpl) GetProxy(httpRoute *route.HttpRoute, r *http.Request) (proxy.GatewayProxy, error) {
 	var p proxy.GatewayProxy
 	var err error
-	switch httpRoute.Type {
+	switch httpRoute.ServantType {
 	case route.TARS_SERVANT:
 		p, err = t.getTupProxy(httpRoute, r)
 		break

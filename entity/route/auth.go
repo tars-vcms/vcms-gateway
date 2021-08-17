@@ -1,5 +1,7 @@
 package route
 
+import "github.com/tars-vcms/vcms-protocol/rbac_server"
+
 type AuthType uint8
 
 const (
@@ -10,9 +12,25 @@ const (
 )
 
 type ServantAuth struct {
-	Type AuthType `json:"type"`
-	// RoleName Token验证模式时所比较的用户组名
-	RoleName []string `json:"role_name"`
+	Type AuthType
+	// RolesName Token验证模式时所比较的用户组名
+	RolesName []string
 	// RbacCode 调用Rbac服务需要携带的Code
-	RbacCode string `json:"rbac_code"`
+	RbacID int64
+}
+
+var TARS_AUTH_TYPE_NAME = map[rbac_server.AUTH_TYPE]AuthType{
+	rbac_server.AUTH_TYPE_TOKEN: TOKEN,
+	rbac_server.AUTH_TYPE_API:   API,
+}
+
+func NewServantAuth(auth rbac_server.RouteAuth) *ServantAuth {
+	return &ServantAuth{
+
+		Type: TARS_AUTH_TYPE_NAME[auth.Type],
+
+		RolesName: auth.RolesName,
+
+		RbacID: auth.RbacID,
+	}
 }

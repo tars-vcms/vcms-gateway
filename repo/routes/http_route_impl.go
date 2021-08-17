@@ -37,12 +37,12 @@ func newHttpRouteManagerImpl() *HttpRouteManagerImpl {
 		routes: []*route.HttpRoute{
 			{
 				Path:        "world",
-				Type:        route.RESERVE_PROXY_SERVANT,
+				ServantType: route.RESERVE_PROXY_SERVANT,
 				ServantName: "http://localhost:10015/hello",
 			},
 			{
 				Path:        "CreateProject",
-				Type:        route.TARS_SERVANT,
+				ServantType: route.TARS_SERVANT,
 				ServantName: "vcms.projectmanager.ProjectManagerObj@tcp -h 127.0.0.1 -p 10017 -t 60000",
 				FuncName:    "CreateProject",
 				InputName:   "input",
@@ -50,7 +50,7 @@ func newHttpRouteManagerImpl() *HttpRouteManagerImpl {
 			},
 			{
 				Path:        "GetProjects",
-				Type:        route.TARS_SERVANT,
+				ServantType: route.TARS_SERVANT,
 				ServantName: "vcms.projectmanager.ProjectManagerObj@tcp -h 127.0.0.1 -p 10017 -t 60000",
 				FuncName:    "GetProjects",
 				InputName:   "input",
@@ -85,6 +85,9 @@ func (h *HttpRouteManagerImpl) parseRouteTree(paths []string, routes []*route.Ht
 		path := paths[0]
 		if path == r1.Path {
 			if len(paths) <= 1 {
+				if r1.ServantType == route.DICTIONARY_SERVANT {
+					return nil
+				}
 				return r1
 			}
 			if r2 := h.parseRouteTree(paths[1:], r1.Children); r2 != nil {

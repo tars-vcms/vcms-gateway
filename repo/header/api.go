@@ -3,7 +3,7 @@ package header
 import "net/http"
 
 var DefaultHeaders = map[string]string{
-	"Content-Type":                 "application/json",
+	"Content-ServantType":          "application/json",
 	"Access-Control-Allow-Origin":  "*",
 	"Access-Control-Allow-Methods": "POST, GET",
 	"Cache-Control":                "no-cache",

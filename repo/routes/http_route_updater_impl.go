@@ -10,6 +10,7 @@ import (
 	"github.com/tars-vcms/vcms-gateway/entity/cache"
 	"github.com/tars-vcms/vcms-gateway/entity/route"
 	"github.com/tars-vcms/vcms-gateway/repo/rcfgs"
+	"github.com/tars-vcms/vcms-protocol/route_manager"
 	"sync"
 	"time"
 )
@@ -106,12 +107,13 @@ func (h *HttpRouteUpdaterImpl) updateRoutes(version string) error {
 	if stringCmd.Err() != nil {
 		return stringCmd.Err()
 	}
-	r := make([]*route.HttpRoute, 0)
+	r := make([]route_manager.RouteTable, 0)
 	err := json.Unmarshal([]byte(stringCmd.Val()), &r)
 	if err != nil {
 		return err
 	}
-	h.callback(r)
+	formatRoutes := route.NewRoutes(r)
+	h.callback(formatRoutes)
 	return nil
 }
 
